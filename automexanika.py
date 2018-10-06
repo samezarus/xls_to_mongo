@@ -63,7 +63,7 @@ class TAutomexanika:
         xls_row_count = xls_worksheet.max_row
 
         for row in range(1, xls_row_count):
-            index  = 0
+            index = 0
 
             code = ""
             type_product = ""
@@ -105,7 +105,7 @@ class TAutomexanika:
                 if (index == 5): # Пытаемся получить производителя
                     brend = value
 
-                if (index == 6): # Пытаемся получить инициалы детали у производителя
+                if (index == 6): # Пытаемся получить инициалы(артикул) детали у производителя
                     oem = value
 
                 if (index == 7): # Пытаемся получить номер детали у производителя

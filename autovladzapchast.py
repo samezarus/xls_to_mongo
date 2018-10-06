@@ -7,6 +7,10 @@ import openpyxl
 
 import pymongo
 
+from bson import json_util # Для записи строки в Mongo (интегрирован в pymongo)
+
+import re
+
 class TAutoVladZapchast:
     # Загрузка ексель файла фирмы Автомеханика в базу Mongo
 
@@ -17,14 +21,23 @@ class TAutoVladZapchast:
         """Constructor"""
         self.xls_file = xls_file
 
-    def getColor(xls_cell):
+    def getColor(self, xls_cell):
         result = ""
 
-        Colors = openpyxl.styles.colors.COLOR_INDEX
         i = xls_cell.fill.start_color.index
-        result = str(Colors[i])
+        result = str(i)
 
         return result
+
+    def clearString(self, cellValue):
+        value = str(cellValue).strip()
+        value = value.replace('"', '')
+        value = value.replace(',', '')
+        value = value.replace(':', '')
+        value = value.replace("\\", "/")  # Замена символа "\" на "/"
+        value = re.sub('\t|\n|\r|', '', value)  # Удаление из строки Символ табуляции, новой строки и возврата каретки
+
+        return value
 
     def xlsToMongo(self):
         xls_document = openpyxl.load_workbook(self.xls_file)
@@ -37,113 +50,41 @@ class TAutoVladZapchast:
         level = ""
         group = ""
 
-        column_count = xls_worksheet.max_column
-        row_count = xls_worksheet.max_row
+        xls_column_count = xls_worksheet.max_column
+        xls_row_count = xls_worksheet.max_row
 
-        for row in range(1, row_count):
-            index  = 0
+        for row in range(1, xls_row_count):
+            index = 0
 
-            record = ""
-
-            code = ""
-            type_product = ""
-            brend = ""
-            oem_char = ""
             oem_number = ""
-            oem_all_number = ""
+            car_brend = ""
+            oem= ""
             analog = ""
-            name = ""
-            new_product = ""
-            price = ""
-            avaible = ""
-            incoming = ""
 
-            for column in range(1, column_count):
+            for column in range(2, xls_column_count):
                 index += 1
-                value = str(xls_worksheet.cell(row, column).value).strip()
 
-                if (index == 1): # Пытаемся получить уровень
-                    level_var = value
+                xls_cell = xls_worksheet.cell(row, column)
+                value = self.clearString(xls_cell.value)
 
-                if (index == 2): # Пытаемся полчить группу
-                    if (value != "0" and value != "None"):
-                        if (level_var == value):
-                            level = level_var # Точнополучили уровень
-                            #print(level+":")
-                        else:
-                            group = value # Точно получили группу
-                            #print("    " + group)
-                        continue # Пескакиваем на следующую итерацию, так как ловить болше нечего
+                if (index == 1):
+                    #print (self.getColor(xls_cell))
+                    if (self.getColor(xls_cell) == "8"):
+                        level = value
+                        continue
+                    if (self.getColor(xls_cell) == "22"):
+                        group = value
+                        continue
+                    if (self.getColor(xls_cell) == "00000000"):
+                        oem_number = value
 
-                if (index == 3): # Пытаемся получить код
-                    code = value
+                if (index == 2):
+                    car_brend = value
 
-                if (index == 4): # Пытаемся получить тип
-                    type_product = value
+                if (index == 3):
+                    oem = value
 
-                if (index == 5): # Пытаемся получить производителя
-                    brend = value
-
-                if (index == 6): # Пытаемся получить инициалы детали у производителя
-                    oem_char = value
-
-                if (index == 7): # Пытаемся получить номер детали у производителя
-                    oem_number = value
-
-                if (index == 8): # Пытаемся получить все номера детали у производителя
-                    oem_all_number = value
-
-                if (index == 9): # Пытаемся получить номера совместимых деталей
-                    analog = value
-
-                if (index == 10): # Пытаемся получить наименование
-                    name = value
-
-                if (index == 11): # Пытаемся получить я вляется ли товар новинкой
-                    new_product = value
-
-                if (index == 12): # Пытаемся получить цену
-                    price = value
-
-                if (index == 13): # Пытаемся получить наличие товара на складе
-                    avaible = value
-
-                if (index == 14): # Пытаемся получить приход товара на складе
-                    incoming = value
-
-            if (code != "None"):
-                record = "          " +\
-                         code +" | "+ \
-                         type_product +" | "+ \
-                         brend +" | "+ \
-                         oem_char +" | "+ \
-                         oem_number +" | "+ \
-                         oem_all_number +" | "+ \
-                         analog +" | "+ \
-                         name +" | "+ \
-                         new_product +" | "+ \
-                         price +" | "+ \
-                         avaible +" | "+ \
-                         incoming +"|"
-                #print (record)
-
-                mongo_doc = {"shop":shop,
-                             "level":level,
-                             "group":group,
-                             "code":code,
-                             "type_product":type_product,
-                             "brend":brend,
-                             "oem_char":oem_char,
-                             "oem_number":oem_number,
-                             "oem_all_number":oem_all_number,
-                             "analog":analog,
-                             "name":name,
-                             "new_product":new_product,
-                             "price":price,
-                             "avaible":avaible,
-                             "incoming":incoming}
-
-                mongo_db_collection.insert_one(mongo_doc).inserted_id
+            print (level +" | "+ group +" | "+ oem_number +" | " + car_brend+" | " + oem)
 #--------------------------------------------------------------------------------------------------------------
 
 
