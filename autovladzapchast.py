@@ -1,32 +1,44 @@
 #!/usr/bin/env python3
 # -*- coding: utf8 -*-
 
-# Модуль распознавания файла от "Автомеханика"
+# Модуль распознавания файла от "Авто Влад Запчасть"
 
 import openpyxl
 
 import pymongo
 
-class TAutomexanika:
+class TAutoVladZapchast:
     # Загрузка ексель файла фирмы Автомеханика в базу Mongo
+
+    mongo_db_name = ""
+    mongo_db_collection_name = ""
 
     def __init__(self, xls_file):
         """Constructor"""
         self.xls_file = xls_file
 
+    def getColor(xls_cell):
+        result = ""
+
+        Colors = openpyxl.styles.colors.COLOR_INDEX
+        i = xls_cell.fill.start_color.index
+        result = str(Colors[i])
+
+        return result
+
     def xlsToMongo(self):
         xls_document = openpyxl.load_workbook(self.xls_file)
         xls_worksheet = xls_document.worksheets[0] # Назначаем индекс листа, который будит парсится
 
-        mongo_db = pymongo.MongoClient()["aridan"]
-        mongo_db_collection = mongo_db["all"]
+        mongo_db = pymongo.MongoClient()[self.mongo_db_name]
+        mongo_db_collection = mongo_db[self.mongo_db_collection_name]
 
-        shop = "automexanika" # Название фирмы, от которой пришёл прайс-лист
+        shop = "autovladzapchast" # Название фирмы, от которой пришёл прайс-лист
         level = ""
         group = ""
 
         column_count = xls_worksheet.max_column
-        row_count    = xls_worksheet.max_row
+        row_count = xls_worksheet.max_row
 
         for row in range(1, row_count):
             index  = 0

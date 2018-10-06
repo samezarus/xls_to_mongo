@@ -7,36 +7,68 @@ import openpyxl
 
 import pymongo
 
+from bson import json_util # Для записи строки в Mongo (интегрирован в pymongo)
+
+import re
+
 class TAutomexanika:
     # Загрузка ексель файла фирмы Автомеханика в базу Mongo
+
+    mongo_db_name = ""
+    mongo_db_collection_name = ""
 
     def __init__(self, xls_file):
         """Constructor"""
         self.xls_file = xls_file
+    #
+    def jsonToMongo(self, json_string):
+        return json_util.loads(json_string)
+    #
+    def clearString(self, cellValue):
+        value = str(cellValue).strip()
+        value = value.replace('"', '')
+        value = value.replace(',', '')
+        value = value.replace(':', '')
+        value = value.replace("\\", "/")  # Замена символа "\" на "/"
+        value = re.sub('\t|\n|\r|', '', value)  # Удаление из строки Символ табуляции, новой строки и возврата каретки
 
+        return value
+    #
+    def getElements(self, string, char):
+        result = ""
+
+        if (len(string) > 0):
+            string = string + char
+            b = 0
+            for x in range(0, len(string)):
+                if (string[x] == char):
+                    result = result + string[b:x] + ","
+                    b = x + 1
+            result = result[0:len(result) - 1]
+
+        return result
+    #
     def xlsToMongo(self):
         xls_document = openpyxl.load_workbook(self.xls_file)
         xls_worksheet = xls_document.worksheets[0] # Назначаем индекс листа, который будит парсится
 
-        mongo_db = pymongo.MongoClient()["aridan"]
-        mongo_db_collection = mongo_db["all"]
+        mongo_db = pymongo.MongoClient()[self.mongo_db_name]
+        mongo_db_collection = mongo_db[self.mongo_db_collection_name]
 
         shop = "automexanika" # Название фирмы, от которой пришёл прайс-лист
         level = ""
         group = ""
 
-        column_count = xls_worksheet.max_column
-        row_count    = xls_worksheet.max_row
+        xls_column_count = xls_worksheet.max_column
+        xls_row_count = xls_worksheet.max_row
 
-        for row in range(1, row_count):
+        for row in range(1, xls_row_count):
             index  = 0
-
-            record = ""
 
             code = ""
             type_product = ""
             brend = ""
-            oem_char = ""
+            oem = ""
             oem_number = ""
             oem_all_number = ""
             analog = ""
@@ -46,9 +78,10 @@ class TAutomexanika:
             avaible = ""
             incoming = ""
 
-            for column in range(1, column_count):
+            for column in range(1, xls_column_count):
                 index += 1
-                value = str(xls_worksheet.cell(row, column).value).strip()
+
+                value = self.clearString(xls_worksheet.cell(row, column).value)
 
                 if (index == 1): # Пытаемся получить уровень
                     level_var = value
@@ -73,16 +106,16 @@ class TAutomexanika:
                     brend = value
 
                 if (index == 6): # Пытаемся получить инициалы детали у производителя
-                    oem_char = value
+                    oem = value
 
                 if (index == 7): # Пытаемся получить номер детали у производителя
                     oem_number = value
 
                 if (index == 8): # Пытаемся получить все номера детали у производителя
-                    oem_all_number = value
+                    oem_all_number = self.getElements(value, "/")
 
                 if (index == 9): # Пытаемся получить номера совместимых деталей
-                    analog = value
+                    analog = self.getElements(value, "/")
 
                 if (index == 10): # Пытаемся получить наименование
                     name = value
@@ -100,38 +133,27 @@ class TAutomexanika:
                     incoming = value
 
             if (code != "None"):
-                record = "          " +\
-                         code +" | "+ \
-                         type_product +" | "+ \
-                         brend +" | "+ \
-                         oem_char +" | "+ \
-                         oem_number +" | "+ \
-                         oem_all_number +" | "+ \
-                         analog +" | "+ \
-                         name +" | "+ \
-                         new_product +" | "+ \
-                         price +" | "+ \
-                         avaible +" | "+ \
-                         incoming +"|"
-                #print (record)
 
-                mongo_doc = {"shop":shop,
-                             "level":level,
-                             "group":group,
-                             "code":code,
-                             "type_product":type_product,
-                             "brend":brend,
-                             "oem_char":oem_char,
-                             "oem_number":oem_number,
-                             "oem_all_number":oem_all_number,
-                             "analog":analog,
-                             "name":name,
-                             "new_product":new_product,
-                             "price":price,
-                             "avaible":avaible,
-                             "incoming":incoming}
+                json_doc =  '"shop":"'            + shop           + '",'  + \
+                            '"level":"'           + level          + '",'  + \
+                            '"group":"'           + group          + '",'  + \
+                            '"code":"'            + code           + '",'  + \
+                            '"type_product":"'    + type_product   + '",'  + \
+                            '"brend":"'           + brend          + '",'  + \
+                            '"oem":"'             + oem            + '",'  + \
+                            '"oem_number":"'      + oem_number     + '",'  + \
+                            '"oem_all_number":["' + oem_all_number + '"],' + \
+                            '"analog":["'         + analog         + '"],' + \
+                            '"name":"'            + name           + '",'  + \
+                            '"new_product":"'     + new_product    + '",'  + \
+                            '"price":"'           + price          + '",'  + \
+                            '"avaible":"'         + avaible        + '",'  + \
+                            '"incoming":"'        + incoming       + '"'
 
-                mongo_db_collection.insert_one(mongo_doc).inserted_id
+                json_doc = '{' + json_doc + '}'
+                print (json_doc)
+                mongo_doc = self.jsonToMongo(json_doc)
+                mongo_db_collection.insert_one(mongo_doc)
 #--------------------------------------------------------------------------------------------------------------
 
 
