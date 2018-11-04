@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf8 -*-
 
-# ⊥ ∫ − ″ ¸
+# ⊥ ∫ − ″ ¸ ●
 
 import os
 
@@ -10,11 +10,15 @@ import xlrd
 
 import pymongo
 
+import json
+from pprint import pprint
+
 import re
 
 from bson import json_util # Для записи строки в Mongo (интегрирован в pymongo)
 
 from xlstomongo import TXlsToMongo
+
 
 def jsonReplase (string):
     if(len(string) > 0):
@@ -34,59 +38,39 @@ def jsonReplase (string):
 def jsonToMongo(json_string):
     return json_util.loads(json_string)
 # --------------------------------------------------------------------------------------------
+xlsDir = '/home/sameza/1/'
+
 
 XlsToMongo = TXlsToMongo()
 XlsToMongo.mongo_db_name = 'aridan'
 
-file = '/home/sameza/1/AVS.xlsx'
-if (os.path.exists(file)):
-    XlsToMongo.xls_file = file
-    XlsToMongo.xls_worksheet_namber = 0
-    XlsToMongo.mongo_db_collection_name = 'avs'
-    #XlsToMongo.xlsToMongo()
-
-file = '/home/sameza/1/autovladzapchast.xlsx'
-if (os.path.exists(file)):
-    XlsToMongo.xls_file = file
-    XlsToMongo.xls_worksheet_namber = 0
-    XlsToMongo.mongo_db_collection_name = 'Автовладзапчасть'
-    #XlsToMongo.xlsToMongo()
-
-file = '/home/sameza/1/automexanika.xlsx'
-if (os.path.exists(file)):
-    XlsToMongo.xls_file = file
-    XlsToMongo.xls_worksheet_namber = 0
-    XlsToMongo.mongo_db_collection_name = 'Автомеханика'
-    #XlsToMongo.xlsToMongo()
+#dirItems = os.listdir(xlsDir)
+#for item in dirItems:
+#    print (os.listdir(xlsDir+item))
 
 
-file = '/home/sameza/1/autoprofi.xlsx'
-if (os.path.exists(file)):
-    XlsToMongo.xls_file = file
-    XlsToMongo.xls_worksheet_namber = 0
-    XlsToMongo.mongo_db_collection_name = 'Автопрофи'
-    #XlsToMongo.xlsToMongo()
 
-file = '/home/sameza/1/asva.xls'
-if (os.path.exists(file)):
-    XlsToMongo.xls_file = file
+
+
+
+xlsfile = '/home/sameza/1/asva/asva.xls'
+conffile = '/home/sameza/1/asva/conf.txt'
+if (os.path.exists(xlsfile)):
+    XlsToMongo.xls_file = xlsfile
+    XlsToMongo.conf_file = conffile
     XlsToMongo.xls_worksheet_namber = 0
-    XlsToMongo.mongo_db_collection_name = 'Асва'
+    XlsToMongo.mongo_db_collection_name = 'all'
     XlsToMongo.xlsToMongo()
 
-file = '/home/sameza/1/rossko.xlsx'
-if (os.path.exists(file)):
-    XlsToMongo.xls_file = file
-    XlsToMongo.xls_worksheet_namber = 0
-    XlsToMongo.mongo_db_collection_name = 'Росско'
-    #XlsToMongo.xlsToMongo()
 
-file = '/home/sameza/1/Uniqom.xls'
-if (os.path.exists(file)):
-    XlsToMongo.xls_file = file
-    XlsToMongo.xls_worksheet_namber = 0
-    XlsToMongo.mongo_db_collection_name = 'Юником'
-    #XlsToMongo.xlsToMongo()
+#f = open('/home/sameza/1/conf.txt')
+#data = json.load(f)
+#print (data)
+#print (len(data))
+#print (data[0])
+#for item in data:
+#    print (item)
+
 
 
 #mongo_db = pymongo.MongoClient()["aridan"]

@@ -1,0 +1,15 @@
+# shop - имя поставщика
+# sheetindex - номер закладки которую следует обрабатывать
+# startrow - номер строки с которой надо начинать обрабатывать
+# startcolumn - номер стобца с которого надо обрабатывать
+# 
+# 
+# 
+# 
+:shop Asva
+:sheetindex 0
+:startrow 2
+:startcolumn 0
+:create Name :type str :from 2 3 4
+:create PartNo :type str :split , :from 5
+:create PriceForPeople :type float :math *1.5 :from 7
